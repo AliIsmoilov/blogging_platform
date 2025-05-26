@@ -1,1 +1,1 @@
-# deposit-project
+# blogging_platform
