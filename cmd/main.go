@@ -10,6 +10,8 @@ import (
 	"github.com/AliIsmoilov/blogging_platform/config"
 	"github.com/AliIsmoilov/blogging_platform/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -41,9 +43,26 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not ping database")
 	}
-	fmt.Println("Connection Successfully")
+	fmt.Println("PostgreSQL connected successfully")
 
-	strg := storage.New(dbPool)
+	clientOpts := options.Client().ApplyURI(cfg.Mongo.URI)
+	client, err := mongo.NewClient(clientOpts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Ping to verify connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	strg := storage.New(dbPool, client.Database(cfg.Mongo.DB))
 
 	engine := api.New(&api.Handler{
 		Strg: strg,

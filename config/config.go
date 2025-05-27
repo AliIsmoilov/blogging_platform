@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Postgres PostgresData
+	Mongo    MongoData
 }
 
 type PostgresData struct {
@@ -15,6 +16,11 @@ type PostgresData struct {
 	Username string
 	Password string
 	DB       string
+}
+
+type MongoData struct {
+	URI string
+	DB  string
 }
 
 func NewConfig(path string) Config {
@@ -29,6 +35,10 @@ func NewConfig(path string) Config {
 			Username: conf.GetString("POSTGRES_USER"),
 			Password: conf.GetString("POSTGRES_PASSWORD"),
 			DB:       conf.GetString("POSTGRES_DB"),
+		},
+		Mongo: MongoData{
+			URI: conf.GetString("MONGO_URI"),
+			DB:  conf.GetString("MONGO_DB_NAME"),
 		},
 	}
 }

@@ -37,6 +37,20 @@ func (h *handlerV1) CreateUser(ctx *gin.Context) {
 		return
 	}
 
+	_, err = h.strg.User().CreateMongo(ctx, &repo.UserModelRespMongo{
+		Id:          data.Id,
+		FullName:    data.FullName.String,
+		Email:       data.Email,
+		PhoneNumber: data.PhoneNumber.String,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   err.Error(),
+			"message": "error while creating user",
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, parseUserRepoToApi(data))
 }
 
@@ -132,7 +146,6 @@ func (h *handlerV1) GetAllUsers(ctx *gin.Context) {
 	offset := ctx.DefaultQuery("offset", "")
 	query := ctx.DefaultQuery("query", "")
 
-	fmt.Println("HEYYYY")
 	data, err := h.strg.User().GetAll(ctx, &repo.GetAllUserReq{
 		Limit:  limit,
 		Offset: offset,
@@ -141,7 +154,7 @@ func (h *handlerV1) GetAllUsers(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
-			"message": "error while getting all users",
+			"message": "error while getting all users PostgreSQL",
 		})
 		return
 	}
@@ -156,6 +169,64 @@ func (h *handlerV1) GetAllUsers(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, resp)
+}
+
+func (h *handlerV1) GetAllUsersMongo(ctx *gin.Context) {
+	limit := ctx.DefaultQuery("limit", "")
+	offset := ctx.DefaultQuery("offset", "")
+	query := ctx.DefaultQuery("query", "")
+
+	dataMongo, err := h.strg.User().GetAllMongo(ctx, &repo.GetAllUserReq{
+		Limit:  limit,
+		Offset: offset,
+		Query:  query,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   err.Error(),
+			"message": "error while getting all users Mongo",
+		})
+		return
+	}
+
+	resp := models.GetAllUsersResp{
+		Count: dataMongo.Count,
+	}
+
+	for _, elem := range dataMongo.UsersMongo {
+		fmt.Println("Mongo User: ", elem)
+		user := parseUserMongoToApi(elem)
+		resp.Users = append(resp.Users, &user)
+	}
+
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func (h *handlerV1) CreateUserMongo(ctx *gin.Context) {
+	var req models.CreateUserReq
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "error while binding data",
+		})
+		return
+	}
+
+	data, err := h.strg.User().CreateMongo(ctx, &repo.UserModelRespMongo{
+		FullName:    *req.FullName,
+		Email:       req.Email,
+		PhoneNumber: *req.PhoneNumber,
+		Password:    req.Password,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   err.Error(),
+			"message": "error while creating user",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, parseUserMongoToApi(data))
 }
 
 func parseUserRepoToApi(user *repo.UserModelResp) models.UserModelResp {
@@ -175,5 +246,21 @@ func parseUserRepoToApi(user *repo.UserModelResp) models.UserModelResp {
 		tm := user.UpdatedAt.Time.Format(time.RFC1123Z)
 		resp.UpdatedAt = &tm
 	}
+	return resp
+}
+
+func parseUserMongoToApi(user *repo.UserModelRespMongo) models.UserModelResp {
+	updatedAt := user.UpdatedAt.Format(time.RFC1123Z)
+
+	resp := models.UserModelResp{
+		Id:          user.Id,
+		Email:       user.Email,
+		Balance:     user.Balance,
+		FullName:    &user.FullName,
+		PhoneNumber: &user.PhoneNumber,
+		CreatedAt:   user.CreatedAt.Format(time.RFC1123Z),
+		UpdatedAt:   &updatedAt,
+	}
+
 	return resp
 }

@@ -13,6 +13,9 @@ type UserStorageI interface {
 	GetByEmail(context.Context, string) (*UserModelResp, error)
 	Delete(context.Context, int64) error
 	GetAll(context.Context, *GetAllUserReq) (*GetAllUserResp, error)
+
+	GetAllMongo(ctx context.Context, req *GetAllUserReq) (*GetAllUserResp, error)
+	CreateMongo(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
 }
 
 type GetAllUserReq struct {
@@ -22,8 +25,9 @@ type GetAllUserReq struct {
 }
 
 type GetAllUserResp struct {
-	Users []*UserModelResp
-	Count int64
+	Users      []*UserModelResp
+	UsersMongo []*UserModelRespMongo
+	Count      int64
 }
 
 type CreateUserReq struct {
@@ -48,4 +52,15 @@ type UserModelResp struct {
 	Balance     float64
 	CreatedAt   time.Time
 	UpdatedAt   sql.NullTime
+}
+
+type UserModelRespMongo struct {
+	Id          int64     `bson:"id"`
+	FullName    string    `bson:"full_name,omitempty"`
+	Email       string    `bson:"email"`
+	Password    string    `bson:"password"`
+	PhoneNumber string    `bson:"phone_number,omitempty"`
+	Balance     float64   `bson:"balance"`
+	CreatedAt   time.Time `bson:"created_at"`
+	UpdatedAt   time.Time `bson:"updated_at,omitempty"`
 }
