@@ -17,7 +17,7 @@ func NewNeo4jUser(driver neo4j.DriverWithContext) repo.Neo4jUserStorageI {
 	return &neo4jUserRepo{driver: driver}
 }
 
-func (u *neo4jUserRepo) CreateUserNeo4j(ctx context.Context, req *repo.UserModelRespMongo) (*repo.UserModelRespMongo, error) {
+func (u *neo4jUserRepo) Create(ctx context.Context, req *repo.UserModelRespMongo) (*repo.UserModelRespMongo, error) {
 	session := u.driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode: neo4j.AccessModeWrite,
 	})
@@ -88,4 +88,63 @@ func (u *neo4jUserRepo) CreateUserNeo4j(ctx context.Context, req *repo.UserModel
 	}
 
 	return result.(*repo.UserModelRespMongo), nil
+}
+
+func (u *neo4jUserRepo) GetAll(ctx context.Context, req *repo.GetAllUserReq) ([]*repo.UserModelRespMongo, error) {
+	session := u.driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+	defer session.Close(ctx)
+
+	query := `
+		MATCH (user:User)
+		RETURN user.id AS id, 
+		       user.full_name AS full_name, 
+		       user.email AS email, 
+		       user.password AS password, 
+		       user.phone_number AS phone_number, 
+		       user.balance AS balance
+	`
+
+	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+		users := []*repo.UserModelRespMongo{}
+
+		records, err := tx.Run(ctx, query, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		for records.Next(ctx) {
+			rec := records.Record()
+
+			id, _ := rec.Get("id")
+			fullName, _ := rec.Get("full_name")
+			email, _ := rec.Get("email")
+			password, _ := rec.Get("password")
+			phoneNumber, _ := rec.Get("phone_number")
+			balance, _ := rec.Get("balance")
+
+			user := &repo.UserModelRespMongo{
+				Id:          id.(int64),
+				FullName:    fullName.(string),
+				Email:       email.(string),
+				Password:    password.(string),
+				PhoneNumber: phoneNumber.(string),
+				Balance:     balance.(float64),
+			}
+			users = append(users, user)
+		}
+
+		if err := records.Err(); err != nil {
+			return nil, err
+		}
+
+		return users, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.([]*repo.UserModelRespMongo), nil
 }

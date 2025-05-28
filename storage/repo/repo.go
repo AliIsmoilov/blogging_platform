@@ -10,7 +10,8 @@ type PostgresOrderStorageI interface{}
 
 // interfaces for Neo4j features
 type Neo4jUserStorageI interface {
-	CreateUserNeo4j(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
+	Create(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
+	GetAll(ctx context.Context, req *GetAllUserReq) ([]*UserModelRespMongo, error)
 }
 
 type MongoStorageI interface {

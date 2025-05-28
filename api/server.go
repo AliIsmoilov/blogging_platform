@@ -32,6 +32,7 @@ func New(h *Handler) *gin.Engine {
 	apiV1.GET("/users/mongo", handlerV1.GetAllUsersMongo)
 
 	apiV1.POST("/user/neo4j", handlerV1.CreateUserNeo4j)
+	apiV1.GET("/users/neo4j", handlerV1.GetAllUsersNeo4j)
 
 	return engine
 }
