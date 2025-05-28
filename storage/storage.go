@@ -2,6 +2,7 @@ package storage
 
 import (
 	mongoStorage "blogging_platform/storage/mongo"
+	neo4jStorage "blogging_platform/storage/neo4j"
 	"blogging_platform/storage/postgres"
 	"blogging_platform/storage/repo"
 
@@ -34,6 +35,7 @@ func New(db *pgxpool.Pool, mongoDB *mongo.Database, neo4jDriver neo4j.DriverWith
 	return &storage{
 		mongo:    mongoStorage.New(mongoDB),
 		postgres: postgres.New(db),
+		neo4j:    neo4jStorage.New(neo4jDriver),
 		// neo4j:    neo4jStore.New(neo4jDriver),
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"blogging_platform/storage"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -46,6 +47,7 @@ func main() {
 	}
 	fmt.Println("PostgreSQL connected successfully")
 
+	// ------------------------------------------
 	// MongoDB connection
 	clientOpts := options.Client().ApplyURI(cfg.Mongo.URI)
 	client, err := mongo.NewClient(clientOpts)
@@ -65,19 +67,23 @@ func main() {
 	}
 	fmt.Println("MongoDB connected successfully...")
 
+	// ------------------------------------------
 	// Neo4j connection
-	// neo4jDriver, err := neo4j.NewDriverWithContext(
-	// 	cfg.Neo4j.URI,
-	// 	neo4j.BasicAuth(cfg.Neo4j.User, cfg.Neo4j.Password, ""))
-	// defer neo4jDriver.Close(ctx)
+	neo4jDriver, err := neo4j.NewDriverWithContext(
+		cfg.Neo4j.URI,
+		neo4j.BasicAuth(cfg.Neo4j.User, cfg.Neo4j.Password, ""))
+	if err != nil {
+		panic(err)
+	}
+	defer neo4jDriver.Close(ctx)
 
-	// err = neo4jDriver.VerifyConnectivity(ctx)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	err = neo4jDriver.VerifyConnectivity(ctx)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println("Neo4j connected successfully...")
 
-	strg := storage.New(dbPool, client.Database(cfg.Mongo.DB), nil)
+	strg := storage.New(dbPool, client.Database(cfg.Mongo.DB), neo4jDriver)
 
 	engine := api.New(&api.Handler{
 		Strg: strg,
