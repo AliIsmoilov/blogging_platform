@@ -1,11 +1,13 @@
-module github.com/AliIsmoilov/blogging_platform
+module blogging_platform
 
 go 1.21.1
 
 require (
+	github.com/AliIsmoilov/blogging_platform v0.0.0-20250527220658-0a483c229cfa
 	github.com/gin-gonic/gin v1.10.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/joho/godotenv v1.5.1
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.1
 	github.com/spf13/viper v1.19.0
 	go.mongodb.org/mongo-driver v1.17.3
 )

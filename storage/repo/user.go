@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type UserStorageI interface {
+type PostgresUserStorageI interface {
 	Create(context.Context, *CreateUserReq) (*UserModelResp, error)
 	Update(context.Context, *UpdateUserReq) (*UserModelResp, error)
 	GetById(context.Context, int64) (*UserModelResp, error)
@@ -14,8 +14,12 @@ type UserStorageI interface {
 	Delete(context.Context, int64) error
 	GetAll(context.Context, *GetAllUserReq) (*GetAllUserResp, error)
 
-	GetAllMongo(ctx context.Context, req *GetAllUserReq) (*GetAllUserResp, error)
-	CreateMongo(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
+	// CreateUserNeo4j(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
+}
+
+type MongoUserStorageI interface {
+	Create(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
+	GetAll(ctx context.Context, req *GetAllUserReq) (*GetAllUserResp, error)
 }
 
 type GetAllUserReq struct {

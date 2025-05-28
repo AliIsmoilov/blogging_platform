@@ -1,9 +1,10 @@
 package api
 
 import (
-	v1 "github.com/AliIsmoilov/blogging_platform/api/v1"
-	"github.com/AliIsmoilov/blogging_platform/config"
-	"github.com/AliIsmoilov/blogging_platform/storage"
+	v1 "blogging_platform/api/v1"
+	"blogging_platform/config"
+	"blogging_platform/storage"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,6 +30,8 @@ func New(h *Handler) *gin.Engine {
 
 	apiV1.POST("/user/mongo", handlerV1.CreateUserMongo)
 	apiV1.GET("/users/mongo", handlerV1.GetAllUsersMongo)
+
+	// apiV1.POST("/user/neo4j", handlerV1.CreateUserNeo4j)
 
 	return engine
 }

@@ -3,27 +3,21 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/AliIsmoilov/blogging_platform/storage/repo"
+	"blogging_platform/storage/repo"
+
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type userRepo struct {
-	db    *pgxpool.Pool   // PostgreSQL DB
-	mongo *mongo.Database // MongoDB DB
+type postgresUserRepo struct {
+	db *pgxpool.Pool
 }
 
-func NewUser(db *pgxpool.Pool, mongo *mongo.Database) repo.UserStorageI {
-	return &userRepo{
-		db:    db,
-		mongo: mongo,
-	}
+func NewPostgresUser(db *pgxpool.Pool) repo.PostgresUserStorageI {
+	return &postgresUserRepo{db: db}
 }
 
-func (u *userRepo) Create(ctx context.Context, req *repo.CreateUserReq) (*repo.UserModelResp, error) {
+func (u *postgresUserRepo) Create(ctx context.Context, req *repo.CreateUserReq) (*repo.UserModelResp, error) {
 	query := `
         INSERT INTO users(
             full_name,
@@ -49,7 +43,7 @@ func (u *userRepo) Create(ctx context.Context, req *repo.CreateUserReq) (*repo.U
 	return &user, nil
 }
 
-func (u *userRepo) Update(ctx context.Context, req *repo.UpdateUserReq) (*repo.UserModelResp, error) {
+func (u *postgresUserRepo) Update(ctx context.Context, req *repo.UpdateUserReq) (*repo.UserModelResp, error) {
 	query := `
         UPDATE users SET
         full_name = $1,
@@ -75,7 +69,7 @@ func (u *userRepo) Update(ctx context.Context, req *repo.UpdateUserReq) (*repo.U
 	return &user, nil
 }
 
-func (u *userRepo) GetById(ctx context.Context, id int64) (*repo.UserModelResp, error) {
+func (u *postgresUserRepo) GetById(ctx context.Context, id int64) (*repo.UserModelResp, error) {
 	var resp repo.UserModelResp
 	query := `
         SELECT
@@ -106,7 +100,7 @@ func (u *userRepo) GetById(ctx context.Context, id int64) (*repo.UserModelResp, 
 	return &resp, nil
 }
 
-func (u *userRepo) GetByEmail(ctx context.Context, email string) (*repo.UserModelResp, error) {
+func (u *postgresUserRepo) GetByEmail(ctx context.Context, email string) (*repo.UserModelResp, error) {
 	var resp repo.UserModelResp
 	query := `
         SELECT
@@ -137,12 +131,12 @@ func (u *userRepo) GetByEmail(ctx context.Context, email string) (*repo.UserMode
 	return &resp, nil
 }
 
-func (u *userRepo) Delete(ctx context.Context, userId int64) error {
+func (u *postgresUserRepo) Delete(ctx context.Context, userId int64) error {
 	_, err := u.db.Exec(ctx, "DELETE FROM users WHERE id = $1", userId)
 	return err
 }
 
-func (u *userRepo) GetAll(ctx context.Context, req *repo.GetAllUserReq) (*repo.GetAllUserResp, error) {
+func (u *postgresUserRepo) GetAll(ctx context.Context, req *repo.GetAllUserReq) (*repo.GetAllUserResp, error) {
 	query := `
         SELECT
             id,
@@ -205,82 +199,155 @@ func (u *userRepo) GetAll(ctx context.Context, req *repo.GetAllUserReq) (*repo.G
 	return &data, nil
 }
 
-func (u *userRepo) GetAllMongo(ctx context.Context, req *repo.GetAllUserReq) (*repo.GetAllUserResp, error) {
-	collection := u.mongo.Collection("users")
+// func (u *userRepo) GetAllMongo(ctx context.Context, req *repo.GetAllUserReq) (*repo.GetAllUserResp, error) {
+// 	collection := u.mongo.Collection("users")
 
-	// Filter: deleted_at == null OR deleted_at does not exist
-	filter := bson.M{
-		"$or": []bson.M{
-			{"deleted_at": bson.M{"$exists": false}},
-			{"deleted_at": nil},
-		},
-	}
+// 	// Filter: deleted_at == null OR deleted_at does not exist
+// 	filter := bson.M{
+// 		"$or": []bson.M{
+// 			{"deleted_at": bson.M{"$exists": false}},
+// 			{"deleted_at": nil},
+// 		},
+// 	}
 
-	cursor, err := collection.Find(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
+// 	cursor, err := collection.Find(ctx, filter)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer cursor.Close(ctx)
 
-	data := repo.GetAllUserResp{}
+// 	data := repo.GetAllUserResp{}
 
-	for cursor.Next(ctx) {
-		var user repo.UserModelRespMongo
-		if err := cursor.Decode(&user); err != nil {
-			return nil, err
-		}
-		data.UsersMongo = append(data.UsersMongo, &user)
-	}
+// 	for cursor.Next(ctx) {
+// 		var user repo.UserModelRespMongo
+// 		if err := cursor.Decode(&user); err != nil {
+// 			return nil, err
+// 		}
+// 		data.UsersMongo = append(data.UsersMongo, &user)
+// 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
+// 	if err := cursor.Err(); err != nil {
+// 		return nil, err
+// 	}
 
-	// Count documents matching the same filter
-	count, err := collection.CountDocuments(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	data.Count = count
+// 	// Count documents matching the same filter
+// 	count, err := collection.CountDocuments(ctx, filter)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	data.Count = count
 
-	return &data, nil
-}
+// 	return &data, nil
+// }
 
-func (u *userRepo) CreateMongo(ctx context.Context, req *repo.UserModelRespMongo) (*repo.UserModelRespMongo, error) {
-	collection := u.mongo.Collection("users")
+// func (u *userRepo) CreateMongo(ctx context.Context, req *repo.UserModelRespMongo) (*repo.UserModelRespMongo, error) {
+// 	collection := u.mongo.Collection("users")
 
-	now := time.Now()
-	if req.Id == 0 {
-		req.Id = now.UnixNano()
-	}
+// 	now := time.Now()
+// 	if req.Id == 0 {
+// 		req.Id = now.UnixNano()
+// 	}
 
-	// Prepare the document to insert
-	userDoc := bson.M{
-		"id":           req.Id, // If you want to use a specific ID, otherwise remove this line and let MongoDB generate it
-		"full_name":    req.FullName,
-		"email":        req.Email,
-		"password":     req.Password,
-		"phone_number": req.PhoneNumber,
-		"balance":      0.0,
-		"created_at":   now,
-		"updated_at":   nil, // if you use it
-		"deleted_at":   nil, // if you use soft delete
-	}
+// 	// Prepare the document to insert
+// 	userDoc := bson.M{
+// 		"id":           req.Id, // If you want to use a specific ID, otherwise remove this line and let MongoDB generate it
+// 		"full_name":    req.FullName,
+// 		"email":        req.Email,
+// 		"password":     req.Password,
+// 		"phone_number": req.PhoneNumber,
+// 		"balance":      0.0,
+// 		"created_at":   now,
+// 		"updated_at":   nil, // if you use it
+// 		"deleted_at":   nil, // if you use soft delete
+// 	}
 
-	_, err := collection.InsertOne(ctx, userDoc)
-	if err != nil {
-		return nil, err
-	}
+// 	_, err := collection.InsertOne(ctx, userDoc)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// Prepare response
-	user := &repo.UserModelRespMongo{
-		Id:          req.Id,
-		FullName:    req.FullName,
-		Email:       req.Email,
-		Password:    req.Password,
-		PhoneNumber: req.PhoneNumber,
-		Balance:     req.Balance,
-	}
+// 	// Prepare response
+// 	user := &repo.UserModelRespMongo{
+// 		Id:          req.Id,
+// 		FullName:    req.FullName,
+// 		Email:       req.Email,
+// 		Password:    req.Password,
+// 		PhoneNumber: req.PhoneNumber,
+// 		Balance:     req.Balance,
+// 	}
 
-	return user, nil
-}
+// 	return user, nil
+// }
+
+// func (u *userRepo) CreateUserNeo4j(ctx context.Context, req *repo.UserModelRespMongo) (*repo.UserModelRespMongo, error) {
+// 	session := u.neo4j.NewSession(ctx, neo4j.SessionConfig{
+// 		AccessMode: neo4j.AccessModeWrite,
+// 	})
+
+// 	// If no Id, generate one (same as Mongo)
+// 	if req.Id == 0 {
+// 		req.Id = time.Now().UnixNano()
+// 	}
+
+// 	// Cypher query to create user node
+// 	query := `
+// 	CREATE (user:User {
+// 		id: $id,
+// 		full_name: $full_name,
+// 		email: $email,
+// 		password: $password,
+// 		phone_number: $phone_number,
+// 		balance: 0.0,
+// 		created_at: datetime($created_at),
+// 		updated_at: null,
+// 		deleted_at: null
+// 	})
+// 	RETURN user.id AS id, user.full_name AS full_name, user.email AS email, user.password AS password, user.phone_number AS phone_number, user.balance AS balance
+// 	`
+
+// 	// Parameters for query
+// 	params := map[string]interface{}{
+// 		"id":           req.Id,
+// 		"full_name":    req.FullName,
+// 		"email":        req.Email,
+// 		"password":     req.Password,
+// 		"phone_number": req.PhoneNumber,
+// 		"created_at":   time.Now().Format(time.RFC3339),
+// 	}
+
+// 	// Run query in write transaction
+// 	result, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+// 		record, err := tx.Run(ctx, query, params)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		if record.Next(ctx) {
+// 			rec := record.Record()
+// 			id, _ := rec.Get("id")
+// 			fullName, _ := rec.Get("full_name")
+// 			email, _ := rec.Get("email")
+// 			password, _ := rec.Get("password")
+// 			phoneNumber, _ := rec.Get("phone_number")
+// 			balance, _ := rec.Get("balance")
+
+// 			// Type assert each value to expected type
+// 			return &repo.UserModelRespMongo{
+// 				Id:          id.(int64),
+// 				FullName:    fullName.(string),
+// 				Email:       email.(string),
+// 				Password:    password.(string),
+// 				PhoneNumber: phoneNumber.(string),
+// 				Balance:     balance.(float64),
+// 			}, nil
+// 		}
+
+// 		return nil, record.Err()
+// 	})
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return result.(*repo.UserModelRespMongo), nil
+// }

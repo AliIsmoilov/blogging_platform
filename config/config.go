@@ -8,6 +8,7 @@ import (
 type Config struct {
 	Postgres PostgresData
 	Mongo    MongoData
+	Neo4j    Neo4jData
 }
 
 type PostgresData struct {
@@ -21,6 +22,12 @@ type PostgresData struct {
 type MongoData struct {
 	URI string
 	DB  string
+}
+
+type Neo4jData struct {
+	URI      string
+	User     string
+	Password string
 }
 
 func NewConfig(path string) Config {
@@ -39,6 +46,11 @@ func NewConfig(path string) Config {
 		Mongo: MongoData{
 			URI: conf.GetString("MONGO_URI"),
 			DB:  conf.GetString("MONGO_DB_NAME"),
+		},
+		Neo4j: Neo4jData{
+			URI:      conf.GetString("NEO4J_URI"),
+			User:     conf.GetString("NEO4J_USER"),
+			Password: conf.GetString("NEO4J_PASSWORD"),
 		},
 	}
 }
