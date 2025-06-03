@@ -25,4 +25,5 @@ type Neo4jStorageI interface {
 // Top-Level Interfaces Per DB
 type PostgresStorageI interface {
 	User() PostgresUserStorageI
+	Post() PostgresPostStorageI
 }

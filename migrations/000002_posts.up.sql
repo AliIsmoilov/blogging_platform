@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS posts (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    
+    title TEXT NOT NULL CHECK (char_length(title) > 3),
+    content TEXT NOT NULL CHECK (char_length(content) > 0),
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE
+
+);

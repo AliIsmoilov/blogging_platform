@@ -3,7 +3,6 @@ package v1
 import (
 	"blogging_platform/api/models"
 	"blogging_platform/storage/repo"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,7 +40,6 @@ func (h *handlerV1) GetAllUsersNeo4j(ctx *gin.Context) {
 	offset := ctx.DefaultQuery("offset", "")
 	query := ctx.DefaultQuery("query", "")
 
-	fmt.Println("HEYYYYYY")
 	data, err := h.strg.Neo4j().User().GetAll(ctx, &repo.GetAllUserReq{
 		Limit:  limit,
 		Offset: offset,
