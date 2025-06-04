@@ -16,6 +16,7 @@ type Neo4jUserStorageI interface {
 
 type MongoStorageI interface {
 	User() MongoUserStorageI
+	Post() MongoPostStorageI
 }
 
 type Neo4jStorageI interface {

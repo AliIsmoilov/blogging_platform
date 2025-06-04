@@ -37,5 +37,8 @@ func New(h *Handler) *gin.Engine {
 	apiV1.POST("/post", handlerV1.CreatePost)
 	apiV1.GET("/posts", handlerV1.GetAllPosts)
 
+	apiV1.POST("/post/mongo", handlerV1.CreatePostMongo)
+	apiV1.GET("/post/mongo", handlerV1.GetAllPostsMongo)
+
 	return engine
 }

@@ -16,6 +16,11 @@ type PostgresPostStorageI interface {
 	// CreateUserNeo4j(ctx context.Context, req *UserModelRespMongo) (*UserModelRespMongo, error)
 }
 
+type MongoPostStorageI interface {
+	Create(ctx context.Context, req *PostModelRespMongo) (*PostModelRespMongo, error)
+	GetAll(ctx context.Context, req *GetAllUserReq) (*GetAllPostsResp, error)
+}
+
 type CreatePostReq struct {
 	UserId  int
 	Title   string
@@ -32,7 +37,16 @@ type PostModelResp struct {
 }
 
 type GetAllPostsResp struct {
-	Posts []*PostModelResp
-	// UsersMongo []*UserModelRespMongo
-	Count int64
+	Posts      []*PostModelResp
+	UsersMongo []*PostModelRespMongo
+	Count      int64
+}
+
+type PostModelRespMongo struct {
+	Id        int64     `bson:"id"`
+	UserId    int       `bson:"user_id,omitempty"`
+	Title     string    `bson:"title"`
+	Content   string    `bson:"content"`
+	CreatedAt time.Time `bson:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty"`
 }
